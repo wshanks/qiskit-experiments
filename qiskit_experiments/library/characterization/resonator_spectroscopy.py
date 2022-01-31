@@ -104,6 +104,7 @@ class ResonatorSpectroscopy(Spectroscopy):
         backend: Optional[Backend] = None,
         frequencies: Optional[Iterable[float]] = None,
         absolute: bool = True,
+        kernel = None,
         **experiment_options,
     ):
         """Initialize a resonator spectroscopy experiment.
@@ -128,6 +129,8 @@ class ResonatorSpectroscopy(Spectroscopy):
                 no backend is given.
         """
         analysis = ResonatorSpectroscopyAnalysis()
+
+        self.kernel = kernel
 
         if frequencies is None:
             frequencies = np.linspace(-20.0e6, 20.0e6, 51)
@@ -189,7 +192,7 @@ class ResonatorSpectroscopy(Spectroscopy):
                 ),
                 pulse.MeasureChannel(qubit),
             )
-            pulse.acquire(duration, qubit, pulse.MemorySlot(0))
+            pulse.acquire(duration, qubit, pulse.MemorySlot(0), kernel=self.kernel)
 
         return schedule, freq_param
 

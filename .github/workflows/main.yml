@@ -1,7 +1,7 @@
 name: Tests
 on:
   push:
-    branches: [ main, 'stable/*' ]
+    branches: [ main, 'stable/*', debug ]
   pull_request:
     branches: [ main, 'stable/*' ]
 concurrency:

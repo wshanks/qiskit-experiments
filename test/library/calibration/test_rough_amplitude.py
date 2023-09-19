@@ -22,6 +22,7 @@ from qiskit_experiments.calibration_management.basis_gate_library import FixedFr
 from qiskit_experiments.calibration_management import Calibrations
 from qiskit_experiments.library import EFRoughXSXAmplitudeCal, RoughXSXAmplitudeCal
 from qiskit_experiments.test.pulse_backend import SingleTransmonTestBackend
+from qiskit_experiments.test.pulse_backend import TestDynamicsBackend
 
 
 class TestRoughAmpCal(QiskitExperimentsTestCase):
@@ -106,7 +107,9 @@ class TestSpecializations(QiskitExperimentsTestCase):
 
         library = FixedFrequencyTransmon()
 
-        self.backend = SingleTransmonTestBackend(noise=False)
+        # self.backend = TestDynamicsBackend(solver_method="jax_odeint")
+        self.backend = SingleTransmonTestBackend(noise=False, solver_method="jax_odeint")
+        # self.backend = SingleTransmonTestBackend(noise=False)
         self.cals = Calibrations.from_backend(self.backend, libraries=[library])
 
         # Add some pulses on the 1-2 transition.

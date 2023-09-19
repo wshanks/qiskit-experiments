@@ -404,6 +404,7 @@ class PulseBackend(BackendV2):
                 else:
                     unitary = unitaries[(inst_name, qubits, params)]
                 state_t = unitary @ state_t
+            state_t = np.asarray(state_t, dtype=complex)
 
             # 4. Convert the probabilities to IQ data or counts.
             measurement_data, memory_data = self._state_to_measurement_data(
@@ -429,6 +430,65 @@ class PulseBackend(BackendV2):
             result["results"].append(run_result)
 
         return FakeJob(self, Result.from_dict(result))
+
+
+try:
+    import jax
+    jax.config.update("jax_enable_x64", True)
+    jax.config.update("jax_platform_name", "cpu")
+    from qiskit_dynamics.array import Array
+    Array.set_default_backend("jax")
+    from qiskit_dynamics import DynamicsBackend
+except ImportError:
+    class DynamicsBackend:
+        """Dummy class so that DynamicsBackend can be subclassed within HAS_DYNAMICS below"""
+        pass
+
+
+@HAS_DYNAMICS.require_in_instance
+class TestDynamicsBackend(DynamicsBackend):
+    def __init__(
+        self,
+        qubit_frequency: float = 5e9,
+        anharmonicity: float = -0.25e9,
+        lambda_1: float = 1e9,
+        noise: bool = True,
+        **kwargs,
+    ):
+        from qiskit_dynamics import Solver
+
+        dim = 3
+
+        v0 = qubit_frequency
+        anharm0 = anharmonicity
+        r0 = lambda_1
+
+        a = np.diag(np.sqrt(np.arange(1, dim)), 1)
+        adag = np.diag(np.sqrt(np.arange(1, dim)), -1)
+        N = np.diag(np.arange(dim))
+
+        ident = np.eye(dim, dtype=complex)
+
+        static_ham = 2 * np.pi * v0 * N + np.pi * anharm0 * N * (N - ident)
+
+        drive_op = 2 * np.pi * r0 * (a + adag)
+
+        dt = 1/4.5e9
+
+        solver = Solver(
+            static_hamiltonian=static_ham,
+            hamiltonian_operators=[drive_op],
+            rotating_frame=static_ham,
+            hamiltonian_channels=["d0"],
+            channel_carrier_freqs={"d0": v0},
+            dt=dt,
+        )
+
+        super().__init__(
+            solver=solver,
+            subsystem_dims=[dim],
+            solver_options={},
+        )
 
 
 @HAS_DYNAMICS.require_in_instance

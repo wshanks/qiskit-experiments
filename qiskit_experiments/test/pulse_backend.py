@@ -72,6 +72,7 @@ class PulseBackend(BackendV2):
         dt: float = 0.1 * 1e-9,
         solver_method="RK23",
         seed: int = 0,
+        solve_options: Optional[dict] = None,
         **kwargs,
     ):
         """Initialize a backend with model information.
@@ -108,6 +109,7 @@ class PulseBackend(BackendV2):
         self.converter = None
 
         self.solver_method = solver_method
+        self.solve_options = solve_options if solve_options is not None else {}
 
         self.static_hamiltonian = static_hamiltonian
         self.hamiltonian_operators = hamiltonian_operators
@@ -339,6 +341,7 @@ class PulseBackend(BackendV2):
             t_eval=[time_f],
             signals=signal,
             method=self.solver_method,
+            **self.solve_options,
         ).y[0]
 
         return unitary
@@ -404,6 +407,7 @@ class PulseBackend(BackendV2):
                 else:
                     unitary = unitaries[(inst_name, qubits, params)]
                 state_t = unitary @ state_t
+            state_t = np.asarray(state_t, dtype=complex)
 
             # 4. Convert the probabilities to IQ data or counts.
             measurement_data, memory_data = self._state_to_measurement_data(
